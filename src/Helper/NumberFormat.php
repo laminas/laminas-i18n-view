@@ -4,240 +4,59 @@ declare(strict_types=1);
 
 namespace Laminas\I18n\View\Helper;
 
-use Laminas\View\Helper\AbstractHelper;
-use Laminas\View\Helper\DeprecatedAbstractHelperHierarchyTrait;
-use Locale;
 use NumberFormatter;
-
-use function is_array;
-use function is_int;
-use function md5;
-use function serialize;
 
 /**
  * View helper for formatting numbers.
- *
- * @final
  */
-class NumberFormat extends AbstractHelper
+final readonly class NumberFormat
 {
-    use DeprecatedAbstractHelperHierarchyTrait;
-
     /**
-     * number of decimals to use.
-     *
-     * @var int
+     * @param non-empty-string $defaultLocale
+     * @param NumberFormatter::TYPE_* $defaultType
+     * @param array<int, string> $defaultTextAttributes
      */
-    protected $decimals;
-
-    /**
-     * NumberFormat style to use
-     *
-     * @var int
-     */
-    protected $formatStyle;
-
-    /**
-     * NumberFormat type to use
-     *
-     * @var int
-     */
-    protected $formatType;
-
-    /**
-     * Formatter instances
-     *
-     * @var array<string, NumberFormatter>
-     */
-    protected $formatters = [];
-
-    /**
-     * Text attributes.
-     *
-     * @var array
-     */
-    protected $textAttributes = [];
-
-    /**
-     * Locale to use instead of the default
-     *
-     * @var string
-     */
-    protected $locale;
+    public function __construct(
+        private string $defaultLocale,
+        private int|null $defaultDecimalPrecision = null,
+        private int $defaultStyle = NumberFormatter::DEFAULT_STYLE,
+        private int $defaultType = NumberFormatter::TYPE_DEFAULT,
+        private array $defaultTextAttributes = [],
+    ) {
+    }
 
     /**
      * Format a number
      *
-     * @param  int|float   $number
-     * @param  int|null    $formatStyle
-     * @param  int|null    $formatType
-     * @param  string|null $locale
-     * @param  int|null    $decimals
-     * @param  array|null  $textAttributes
-     * @return string
+     * @param non-empty-string|null $locale
+     * @param NumberFormatter::TYPE_* $formatType
+     * @param array<int, string>|null $textAttributes
      */
     public function __invoke(
-        $number,
-        $formatStyle = null,
-        $formatType = null,
-        $locale = null,
-        $decimals = null,
-        ?array $textAttributes = null
-    ) {
-        if (null === $locale) {
-            $locale = $this->getLocale();
-        }
-        if (null === $formatStyle) {
-            $formatStyle = $this->getFormatStyle();
-        }
-        if (null === $formatType) {
-            $formatType = $this->getFormatType();
-        }
-        if (! is_int($decimals) || $decimals < 0) {
-            $decimals = $this->getDecimals();
-        }
-        if (! is_array($textAttributes)) {
-            $textAttributes = $this->getTextAttributes();
-        }
-
-        $formatterId = md5(
-            $formatStyle . "\0" . $locale . "\0" . $decimals . "\0"
-            . md5(serialize($textAttributes))
+        int|float $number,
+        string|null $locale = null,
+        int|null $formatStyle = null,
+        int|null $formatType = null,
+        int|null $decimals = null,
+        array|null $textAttributes = null,
+    ): string {
+        $formatter = new NumberFormatter(
+            $locale ?? $this->defaultLocale,
+            $formatStyle ?? $this->defaultStyle,
         );
 
-        if (isset($this->formatters[$formatterId])) {
-            $formatter = $this->formatters[$formatterId];
-        } else {
-            $formatter = new NumberFormatter($locale, $formatStyle);
-
-            if ($decimals !== null) {
-                $formatter->setAttribute(NumberFormatter::MIN_FRACTION_DIGITS, $decimals);
-                $formatter->setAttribute(NumberFormatter::MAX_FRACTION_DIGITS, $decimals);
-            }
-
-            foreach ($textAttributes as $textAttribute => $value) {
-                $formatter->setTextAttribute($textAttribute, $value);
-            }
-
-            $this->formatters[$formatterId] = $formatter;
+        $precision = $decimals ?? $this->defaultDecimalPrecision;
+        if ($precision !== null) {
+            $formatter->setAttribute(NumberFormatter::MIN_FRACTION_DIGITS, $precision);
+            $formatter->setAttribute(NumberFormatter::MAX_FRACTION_DIGITS, $precision);
         }
 
-        return $formatter->format($number, $formatType);
-    }
+        $attributes = $textAttributes ?? $this->defaultTextAttributes;
 
-    /**
-     * Set format style to use instead of the default
-     *
-     * @param  int $formatStyle
-     * @return $this
-     */
-    public function setFormatStyle($formatStyle)
-    {
-        $this->formatStyle = (int) $formatStyle;
-        return $this;
-    }
-
-    /**
-     * Get the format style to use
-     *
-     * @return int
-     */
-    public function getFormatStyle()
-    {
-        if (null === $this->formatStyle) {
-            $this->formatStyle = NumberFormatter::DECIMAL;
+        foreach ($attributes as $textAttribute => $value) {
+            $formatter->setTextAttribute($textAttribute, $value);
         }
 
-        return $this->formatStyle;
-    }
-
-    /**
-     * Set format type to use instead of the default
-     *
-     * @param  int $formatType
-     * @return $this
-     */
-    public function setFormatType($formatType)
-    {
-        $this->formatType = (int) $formatType;
-        return $this;
-    }
-
-    /**
-     * Get the format type to use
-     *
-     * @return int
-     */
-    public function getFormatType()
-    {
-        if (null === $this->formatType) {
-            $this->formatType = NumberFormatter::TYPE_DEFAULT;
-        }
-        return $this->formatType;
-    }
-
-    /**
-     * Set number of decimals to use instead of the default.
-     *
-     * @param  int $decimals
-     * @return $this
-     */
-    public function setDecimals($decimals)
-    {
-        $this->decimals = $decimals;
-        return $this;
-    }
-
-    /**
-     * Get number of decimals.
-     *
-     * @return int
-     */
-    public function getDecimals()
-    {
-        return $this->decimals;
-    }
-
-    /**
-     * Set locale to use instead of the default.
-     *
-     * @param  string $locale
-     * @return $this
-     */
-    public function setLocale($locale)
-    {
-        $this->locale = (string) $locale;
-        return $this;
-    }
-
-    /**
-     * Get the locale to use
-     *
-     * @return string
-     */
-    public function getLocale()
-    {
-        if ($this->locale === null) {
-            $this->locale = Locale::getDefault();
-        }
-
-        return $this->locale;
-    }
-
-    /**
-     * @return array
-     */
-    public function getTextAttributes()
-    {
-        return $this->textAttributes;
-    }
-
-    /**
-     * @return $this
-     */
-    public function setTextAttributes(array $textAttributes)
-    {
-        $this->textAttributes = $textAttributes;
-        return $this;
+        return $formatter->format($number, $formatType ?? $this->defaultType);
     }
 }
