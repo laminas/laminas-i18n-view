@@ -4,25 +4,24 @@ declare(strict_types=1);
 
 namespace LaminasTest\I18n\View\Helper;
 
-use Laminas\I18n\Exception\RuntimeException;
-use Laminas\I18n\Translator\Translator;
 use Laminas\I18n\View\Helper\Translate as TranslateHelper;
+use Laminas\Translator\TranslatorInterface;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 final class TranslateTest extends TestCase
 {
     public TranslateHelper $helper;
+    private TranslatorInterface&MockObject $translator;
 
     protected function setUp(): void
     {
-        parent::setUp();
-        $this->helper = new TranslateHelper();
-    }
-
-    public function testInvokingWithoutTranslatorWillRaiseException(): void
-    {
-        $this->expectException(RuntimeException::class);
-        $this->helper->__invoke('message');
+        $this->translator = $this->createMock(TranslatorInterface::class);
+        $this->helper     = new TranslateHelper(
+            $this->translator,
+            'default',
+            'en_US',
+        );
     }
 
     public function testDefaultInvokeArguments(): void
@@ -30,15 +29,12 @@ final class TranslateTest extends TestCase
         $input    = 'input';
         $expected = 'translated';
 
-        $translatorMock = $this->createMock(Translator::class);
-        $translatorMock->expects(self::once())
+        $this->translator->expects(self::once())
             ->method('translate')
-            ->with($input, 'default', null)
+            ->with($input, 'default', 'en_US')
             ->willReturn($expected);
 
-        $this->helper->setTranslator($translatorMock);
-
-        self::assertEquals($expected, $this->helper->__invoke($input));
+        self::assertSame($expected, $this->helper->__invoke($input));
     }
 
     public function testCustomInvokeArguments(): void
@@ -46,16 +42,13 @@ final class TranslateTest extends TestCase
         $input      = 'input';
         $expected   = 'translated';
         $textDomain = 'textDomain';
-        $locale     = 'en_US';
+        $locale     = 'de_DE';
 
-        $translatorMock = $this->createMock(Translator::class);
-        $translatorMock->expects(self::once())
+        $this->translator->expects(self::once())
             ->method('translate')
             ->with($input, $textDomain, $locale)
             ->willReturn($expected);
 
-        $this->helper->setTranslator($translatorMock);
-
-        self::assertEquals($expected, $this->helper->__invoke($input, $textDomain, $locale));
+        self::assertSame($expected, $this->helper->__invoke($input, $textDomain, $locale));
     }
 }

@@ -4,41 +4,43 @@ declare(strict_types=1);
 
 namespace Laminas\I18n\View\Helper;
 
-use Laminas\I18n\Exception;
+use Laminas\Translator\TranslatorInterface;
 
 /**
  * View helper for translating plural messages.
- *
- * @final
  */
-class TranslatePlural extends AbstractTranslatorHelper
+final readonly class TranslatePlural
 {
+    /**
+     * @param non-empty-string $defaultTextDomain
+     * @param non-empty-string $defaultLocale
+     */
+    public function __construct(
+        private TranslatorInterface $translator,
+        private string $defaultTextDomain,
+        private string $defaultLocale,
+    ) {
+    }
+
     /**
      * Translate a plural message
      *
-     * @param  string      $singular
-     * @param  string      $plural
-     * @param  int         $number
-     * @param  string|null $textDomain
-     * @param  string|null $locale
-     * @throws Exception\RuntimeException
-     * @return string
+     * @param non-empty-string|null $textDomain
+     * @param non-empty-string|null $locale
      */
     public function __invoke(
-        $singular,
-        $plural,
-        $number,
-        $textDomain = null,
-        $locale = null
-    ) {
-        $translator = $this->getTranslator();
-        if (null === $translator) {
-            throw new Exception\RuntimeException('Translator has not been set');
-        }
-        if (null === $textDomain) {
-            $textDomain = $this->getTranslatorTextDomain();
-        }
-
-        return $translator->translatePlural($singular, $plural, $number, $textDomain, $locale);
+        string $singular,
+        string $plural,
+        int $number,
+        string|null $textDomain = null,
+        string|null $locale = null
+    ): string {
+        return $this->translator->translatePlural(
+            $singular,
+            $plural,
+            $number,
+            $textDomain ?? $this->defaultTextDomain,
+            $locale ?? $this->defaultLocale,
+        );
     }
 }
