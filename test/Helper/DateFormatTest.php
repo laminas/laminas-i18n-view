@@ -4,295 +4,145 @@ declare(strict_types=1);
 
 namespace LaminasTest\I18n\View\Helper;
 
-use DateTime;
-use DateTimeInterface;
+use DateTimeImmutable;
+use DateTimeZone;
 use IntlDateFormatter;
-use IntlGregorianCalendar;
-use Laminas\I18n\View\Helper\DateFormat as DateFormatHelper;
-use Locale;
+use Laminas\I18n\View\Helper\DateFormat;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-use function date_default_timezone_set;
-use function str_replace;
+use function assert;
 
 final class DateFormatTest extends TestCase
 {
-    private DateFormatHelper $helper;
+    private DateTimeImmutable $date;
 
     protected function setUp(): void
     {
-        parent::setUp();
-        $this->helper = new DateFormatHelper();
+        $date = DateTimeImmutable::createFromFormat('Y-m-d H:i:s T', '2020-03-04 22:33:44 UTC');
+        assert($date !== false);
+
+        $this->date = $date;
     }
 
-    /** @return array<array-key, array{0:string,1:string,2:int,3:int,4:DateTime}> */
-    public static function dateTestsDataProvider(): array
+    /**
+     * @return list<array{
+     *     0: non-empty-string|null,
+     *     1: int|null,
+     *     2: int|null,
+     *     3: string|null,
+     *     4: string,
+     * }>
+     */
+    public static function fixedDateProvider(): array
     {
-        $date = new DateTime('2012-07-02T22:44:03Z');
-
         return [
-            [
-                'de_DE',
-                'Europe/Berlin',
-                IntlDateFormatter::FULL,
-                IntlDateFormatter::FULL,
-                $date,
-            ],
-            [
-                'de_DE',
-                'Europe/Berlin',
-                IntlDateFormatter::LONG,
-                IntlDateFormatter::LONG,
-                $date,
-            ],
-            [
-                'de_DE',
-                'Europe/Berlin',
-                IntlDateFormatter::MEDIUM,
-                IntlDateFormatter::MEDIUM,
-                $date,
-            ],
-            [
-                'de_DE',
-                'Europe/Berlin',
-                IntlDateFormatter::SHORT,
-                IntlDateFormatter::SHORT,
-                $date,
-            ],
-            [
-                'ru_RU',
-                'Europe/Moscow',
-                IntlDateFormatter::FULL,
-                IntlDateFormatter::FULL,
-                $date,
-            ],
-            [
-                'ru_RU',
-                'Europe/Moscow',
-                IntlDateFormatter::LONG,
-                IntlDateFormatter::LONG,
-                $date,
-            ],
-            [
-                'ru_RU',
-                'Europe/Moscow',
-                IntlDateFormatter::MEDIUM,
-                IntlDateFormatter::MEDIUM,
-                $date,
-            ],
-            [
-                'ru_RU',
-                'Europe/Moscow',
-                IntlDateFormatter::SHORT,
-                IntlDateFormatter::SHORT,
-                $date,
-            ],
-            [
-                'en_US',
-                'America/New_York',
-                IntlDateFormatter::FULL,
-                IntlDateFormatter::FULL,
-                $date,
-            ],
-            [
-                'en_US',
-                'America/New_York',
-                IntlDateFormatter::LONG,
-                IntlDateFormatter::LONG,
-                $date,
-            ],
-            [
-                'en_US',
-                'America/New_York',
-                IntlDateFormatter::MEDIUM,
-                IntlDateFormatter::MEDIUM,
-                $date,
-            ],
-            [
-                'en_US',
-                'America/New_York',
-                IntlDateFormatter::SHORT,
-                IntlDateFormatter::SHORT,
-                $date,
-            ],
+            [null,    null, null, null, '04/03/2020, 22:33'],
+            ['en_GB', null, null, null, '04/03/2020, 22:33'],
+            ['de_DE', null, null, null, '04.03.20, 22:33'],
+            ['en_US', null, null, null, '3/4/20, 10:33 PM'],
+            // .
+            [null,    IntlDateFormatter::MEDIUM, null, null, '4 Mar 2020, 22:33'],
+            ['en_GB', IntlDateFormatter::MEDIUM, null, null, '4 Mar 2020, 22:33'],
+            ['de_DE', IntlDateFormatter::MEDIUM, null, null, '04.03.2020, 22:33'],
+            ['en_US', IntlDateFormatter::MEDIUM, null, null, 'Mar 4, 2020, 10:33 PM'],
+            // .
+            [null,    IntlDateFormatter::LONG, null, null, '4 March 2020 at 22:33'],
+            ['en_GB', IntlDateFormatter::LONG, null, null, '4 March 2020 at 22:33'],
+            ['de_DE', IntlDateFormatter::LONG, null, null, '4. März 2020 um 22:33'],
+            ['en_US', IntlDateFormatter::LONG, null, null, 'March 4, 2020 at 10:33 PM'],
+            // .
+            [null,    IntlDateFormatter::TRADITIONAL, null, null, 'Wednesday, 4 March 2020 at 22:33'],
+            ['en_GB', IntlDateFormatter::TRADITIONAL, null, null, 'Wednesday, 4 March 2020 at 22:33'],
+            ['de_DE', IntlDateFormatter::TRADITIONAL, null, null, 'Mittwoch, 4. März 2020 um 22:33'],
+            ['en_US', IntlDateFormatter::TRADITIONAL, null, null, 'Wednesday, March 4, 2020 at 10:33 PM'],
+            // .
+            [null,    IntlDateFormatter::FULL, null, null, 'Wednesday, 4 March 2020 at 22:33'],
+            ['en_GB', IntlDateFormatter::FULL, null, null, 'Wednesday, 4 March 2020 at 22:33'],
+            ['de_DE', IntlDateFormatter::FULL, null, null, 'Mittwoch, 4. März 2020 um 22:33'],
+            ['en_US', IntlDateFormatter::FULL, null, null, 'Wednesday, March 4, 2020 at 10:33 PM'],
+            // .
+            [null,    null, IntlDateFormatter::MEDIUM, null, '04/03/2020, 22:33:44'],
+            ['en_GB', null, IntlDateFormatter::MEDIUM, null, '04/03/2020, 22:33:44'],
+            ['de_DE', null, IntlDateFormatter::MEDIUM, null, '04.03.20, 22:33:44'],
+            ['en_US', null, IntlDateFormatter::MEDIUM, null, '3/4/20, 10:33:44 PM'],
+            // .
+            [null,    null, IntlDateFormatter::LONG, null, '04/03/2020, 22:33:44 UTC'],
+            ['en_GB', null, IntlDateFormatter::LONG, null, '04/03/2020, 22:33:44 UTC'],
+            ['de_DE', null, IntlDateFormatter::LONG, null, '04.03.20, 22:33:44 UTC'],
+            ['en_US', null, IntlDateFormatter::LONG, null, '3/4/20, 10:33:44 PM UTC'],
+            // .
+            [null,    null, IntlDateFormatter::FULL, null, '04/03/2020, 22:33:44 Coordinated Universal Time'],
+            ['en_GB', null, IntlDateFormatter::FULL, null, '04/03/2020, 22:33:44 Coordinated Universal Time'],
+            ['de_DE', null, IntlDateFormatter::FULL, null, '04.03.20, 22:33:44 Koordinierte Weltzeit'],
+            ['en_US', null, IntlDateFormatter::FULL, null, '3/4/20, 10:33:44 PM Coordinated Universal Time'],
+            // .
+            [null,    null, IntlDateFormatter::TRADITIONAL, null, '04/03/2020, 22:33:44 Coordinated Universal Time'],
+            ['en_GB', null, IntlDateFormatter::TRADITIONAL, null, '04/03/2020, 22:33:44 Coordinated Universal Time'],
+            ['de_DE', null, IntlDateFormatter::TRADITIONAL, null, '04.03.20, 22:33:44 Koordinierte Weltzeit'],
+            ['en_US', null, IntlDateFormatter::TRADITIONAL, null, '3/4/20, 10:33:44 PM Coordinated Universal Time'],
         ];
     }
 
-    /** @return array<array-key, array{0:string,1:string,2:int,3:int,4:string, 5:DateTime}> */
-    public static function dateTestsDataProviderWithPattern(): array
-    {
-        $date = new DateTime('2012-07-02T22:44:03Z');
-
-        return [
-            [
-                'de_DE',
-                'Europe/Berlin',
-                IntlDateFormatter::FULL,
-                IntlDateFormatter::FULL,
-                'dd-MM',
-                $date,
-            ],
-            [
-                'de_DE',
-                'Europe/Berlin',
-                IntlDateFormatter::FULL,
-                IntlDateFormatter::FULL,
-                'MMMM',
-                $date,
-            ],
-            [
-                'de_DE',
-                'Europe/Berlin',
-                IntlDateFormatter::FULL,
-                IntlDateFormatter::FULL,
-                'MMMM.Y',
-                $date,
-            ],
-            [
-                'de_DE',
-                'Europe/Berlin',
-                IntlDateFormatter::FULL,
-                IntlDateFormatter::FULL,
-                'dd/Y',
-                $date,
-            ],
-        ];
-    }
-
-    #[DataProvider('dateTestsDataProvider')]
-    public function testBasic(
-        string $locale,
-        string $timezone,
-        int $timeType,
-        int $dateType,
-        DateTimeInterface $date
+    /**
+     * @param non-empty-string|null $locale
+     */
+    #[DataProvider('fixedDateProvider')]
+    public function testBasicBehaviourOfDefaults(
+        string|null $locale,
+        int|null $dateType,
+        int|null $timeType,
+        string|null $pattern,
+        string $expect,
     ): void {
-        $this->helper->setTimezone($timezone);
-
-        $expected = $this->getIntlDateFormatter($locale, $dateType, $timeType, $timezone)
-                         ->format($date->getTimestamp());
-
-        self::assertMbStringEquals($expected, $this->helper->__invoke(
-            $date,
-            $dateType,
-            $timeType,
-            $locale,
-            null
-        ));
-    }
-
-    #[DataProvider('dateTestsDataProvider')]
-    public function testSettersProvideDefaults(
-        string $locale,
-        string $timezone,
-        int $timeType,
-        int $dateType,
-        DateTimeInterface $date
-    ): void {
-        $this->helper
-            ->setTimezone($timezone)
-            ->setLocale($locale);
-
-        $expected = $this->getIntlDateFormatter($locale, $dateType, $timeType, $timezone)
-                         ->format($date->getTimestamp());
-
-        self::assertMbStringEquals($expected, $this->helper->__invoke(
-            $date,
-            $dateType,
-            $timeType
-        ));
-    }
-
-    #[DataProvider('dateTestsDataProviderWithPattern')]
-    public function testUseCustomPattern(
-        string $locale,
-        string $timezone,
-        int $timeType,
-        int $dateType,
-        string $pattern,
-        DateTimeInterface $date
-    ): void {
-        $this->helper
-             ->setTimezone($timezone);
-
-        $expected = $this->getIntlDateFormatter($locale, $dateType, $timeType, $timezone, $pattern)
-                         ->format($date->getTimestamp());
-
-        self::assertMbStringEquals($expected, $this->helper->__invoke(
-            $date,
-            $dateType,
-            $timeType,
-            $locale,
-            $pattern
-        ));
-    }
-
-    public function testDefaultLocale(): void
-    {
-        self::assertEquals(Locale::getDefault(), $this->helper->getLocale());
-    }
-
-    public function testBugTwoPatternOnSameHelperInstance(): void
-    {
-        $date = new DateTime('2012-07-02T22:44:03Z');
-
-        $helper = new DateFormatHelper();
-        $helper->setTimezone('Europe/Berlin');
-        self::assertEquals(
-            '03/2012',
-            $helper->__invoke($date, IntlDateFormatter::FULL, IntlDateFormatter::FULL, 'it_IT', 'dd/Y')
+        $helper = new DateFormat(
+            'en_GB',
+            new DateTimeZone('Europe/London'),
+            IntlDateFormatter::SHORT,
+            IntlDateFormatter::SHORT,
         );
-        self::assertEquals(
-            '03-2012',
-            $helper->__invoke($date, IntlDateFormatter::FULL, IntlDateFormatter::FULL, 'it_IT', 'dd-Y')
+
+        self::assertSame(
+            $expect,
+            $helper->__invoke(
+                $this->date,
+                $locale,
+                $dateType,
+                $timeType,
+                $pattern,
+            ),
         );
     }
 
-    public static function assertMbStringEquals(string $expected, string $test, string $message = ''): void
+    public function testPatternOverride(): void
     {
-        $expected = str_replace(["\xC2\xA0", ' '], '', $expected);
-        $test     = str_replace(["\xC2\xA0", ' '], '', $test);
-        self::assertEquals($expected, $test, $message);
+        $helper = new DateFormat(
+            'en_GB',
+            new DateTimeZone('Europe/London'),
+            IntlDateFormatter::SHORT,
+            IntlDateFormatter::SHORT,
+        );
+
+        self::assertSame('Mar 20', $helper->__invoke(date: $this->date, pattern: 'MMM YY'));
     }
 
-    public function getIntlDateFormatter(
-        string $locale,
-        int $dateType,
-        int $timeType,
-        string $timezone,
-        ?string $pattern = null
-    ): IntlDateFormatter {
-        return new IntlDateFormatter($locale, $dateType, $timeType, $timezone, null, $pattern ?? '');
-    }
-
-    public function testDifferentTimezone(): void
+    public function testIntegerDateIsTreatedAsTimestampInTheDefaultTimeZone(): void
     {
-        $helper = $this->helper;
+        $helper = new DateFormat(
+            'en_GB',
+            new DateTimeZone('America/New_York'),
+            IntlDateFormatter::SHORT,
+            IntlDateFormatter::SHORT,
+        );
 
-        date_default_timezone_set('America/Chicago');
-        $date = new DateTime('2018-01-01');
+        $now = DateTimeImmutable::createFromFormat('Y-m-d H:i:s T', '2020-01-01 10:33:44 UTC');
+        self::assertNotFalse($now);
+        $expect       = $now->setTimezone(new DateTimeZone('America/New_York'));
+        $expectFormat = $helper->__invoke($expect);
 
-        self::assertSame('Jan 1, 2018', $helper($date, IntlDateFormatter::MEDIUM));
-
-        date_default_timezone_set('America/New_York');
-        $date = new DateTime('2018-01-01');
-
-        self::assertSame('Jan 1, 2018', $helper($date, IntlDateFormatter::MEDIUM));
-    }
-
-    public function testIntlCalendarIsHandledAsWell(): void
-    {
-        $date = DateTime::createFromFormat('!Y-m-d', '2013-06-01');
-        self::assertNotFalse($date);
-        $calendar = IntlGregorianCalendar::fromDateTime($date);
-        self::assertNotNull($calendar);
-
-        $helper = new DateFormatHelper();
-        $helper->setTimezone('Europe/Berlin');
-        self::assertEquals(
-            '01-06-2013',
-            $helper->__invoke($calendar, IntlDateFormatter::FULL, IntlDateFormatter::FULL, 'it_IT', 'dd-MM-Y')
+        self::assertSame(
+            $expectFormat,
+            $helper->__invoke($now->getTimestamp()),
         );
     }
 }
