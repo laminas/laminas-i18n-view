@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="6.14.2@bbd217fc98c0daa0a13aea2a7f119d03ba3fc9a0">
+  <file src="src/Helper/AbstractTranslatorHelper.php">
+    <DeprecatedClass>
+      <code><![CDATA[AbstractHelper]]></code>
+    </DeprecatedClass>
+    <DeprecatedInterface>
+      <code><![CDATA[Translator|null]]></code>
+      <code><![CDATA[Translator|null]]></code>
+      <code><![CDATA[Translator|null]]></code>
+    </DeprecatedInterface>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(bool) $enabled]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
+  <file src="src/Helper/CurrencyFormat.php">
+    <DeprecatedClass>
+      <code><![CDATA[AbstractHelper]]></code>
+    </DeprecatedClass>
+    <DocblockTypeContradiction>
+      <code><![CDATA[$this->locale === null]]></code>
+    </DocblockTypeContradiction>
+    <InvalidNullableReturnType>
+      <code><![CDATA[string]]></code>
+    </InvalidNullableReturnType>
+    <MissingConstructor>
+      <code><![CDATA[$currencyCode]]></code>
+      <code><![CDATA[$currencyPattern]]></code>
+      <code><![CDATA[$locale]]></code>
+    </MissingConstructor>
+    <NullableReturnStatement>
+      <code><![CDATA[preg_replace($pattern, '$1', $formattedNumber)]]></code>
+    </NullableReturnStatement>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(bool) $showDecimals]]></code>
+      <code><![CDATA[(string) $locale]]></code>
+    </RedundantCastGivenDocblockType>
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA[$pattern !== null]]></code>
+    </RedundantConditionGivenDocblockType>
+  </file>
+  <file src="src/Helper/DateFormat.php">
+    <DeprecatedClass>
+      <code><![CDATA[AbstractHelper]]></code>
+    </DeprecatedClass>
+    <DocblockTypeContradiction>
+      <code><![CDATA[$this->locale === null]]></code>
+    </DocblockTypeContradiction>
+    <MissingConstructor>
+      <code><![CDATA[$locale]]></code>
+      <code><![CDATA[$timezone]]></code>
+    </MissingConstructor>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$date]]></code>
+    </MixedArgumentTypeCoercion>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string) $locale]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
+  <file src="src/Helper/NumberFormat.php">
+    <DeprecatedClass>
+      <code><![CDATA[AbstractHelper]]></code>
+    </DeprecatedClass>
+    <DocblockTypeContradiction>
+      <code><![CDATA[$this->locale === null]]></code>
+      <code><![CDATA[null === $this->formatStyle]]></code>
+      <code><![CDATA[null === $this->formatType]]></code>
+    </DocblockTypeContradiction>
+    <MissingConstructor>
+      <code><![CDATA[$decimals]]></code>
+      <code><![CDATA[$formatStyle]]></code>
+      <code><![CDATA[$formatType]]></code>
+      <code><![CDATA[$locale]]></code>
+    </MissingConstructor>
+    <MixedArgument>
+      <code><![CDATA[$value]]></code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$textAttribute]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedAssignment>
+      <code><![CDATA[$value]]></code>
+    </MixedAssignment>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int) $formatStyle]]></code>
+      <code><![CDATA[(int) $formatType]]></code>
+      <code><![CDATA[(string) $locale]]></code>
+    </RedundantCastGivenDocblockType>
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA[$decimals !== null]]></code>
+    </RedundantConditionGivenDocblockType>
+  </file>
+  <file src="src/Helper/Plural.php">
+    <DeprecatedClass>
+      <code><![CDATA[AbstractHelper]]></code>
+    </DeprecatedClass>
+    <MixedReturnStatement>
+      <code><![CDATA[$strings[$pluralIndex]]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/HelperConfig.php">
+    <DeprecatedInterface>
+      <code><![CDATA[HelperConfig]]></code>
+    </DeprecatedInterface>
+    <MixedArgument>
+      <code><![CDATA[$factory]]></code>
+      <code><![CDATA[$target]]></code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$alias]]></code>
+      <code><![CDATA[$name]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedAssignment>
+      <code><![CDATA[$factory]]></code>
+      <code><![CDATA[$target]]></code>
+    </MixedAssignment>
+    <UnusedClass>
+      <code><![CDATA[HelperConfig]]></code>
+    </UnusedClass>
+  </file>
+  <file src="test/Helper/CurrencyFormatTest.php">
+    <PossiblyNullArgument>
+      <code><![CDATA[$currencyPattern]]></code>
+    </PossiblyNullArgument>
+  </file>
+  <file src="test/Helper/NumberFormatTest.php">
+    <PossiblyNullArgument>
+      <code><![CDATA[$decimals]]></code>
+    </PossiblyNullArgument>
+  </file>
+</files>
