@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace LaminasTest\I18n\View\Helper;
 
 use Laminas\I18n\View\Helper\NumberFormat as NumberFormatHelper;
-use Locale;
 use NumberFormatter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
