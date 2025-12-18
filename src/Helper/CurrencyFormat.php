@@ -4,272 +4,128 @@ declare(strict_types=1);
 
 namespace Laminas\I18n\View\Helper;
 
-use Laminas\View\Helper\AbstractHelper;
-use Laminas\View\Helper\DeprecatedAbstractHelperHierarchyTrait;
-use Locale;
+use Money\Currencies;
+use Money\Currency;
+use Money\Money;
 use NumberFormatter;
 
-use function md5;
-use function preg_quote;
-use function preg_replace;
+use function mb_trim;
 use function sprintf;
+use function str_pad;
+use function strlen;
+use function substr;
+
+use const STR_PAD_LEFT;
 
 /**
  * View helper for formatting currency.
- *
- * @final
  */
-class CurrencyFormat extends AbstractHelper
+final readonly class CurrencyFormat
 {
-    use DeprecatedAbstractHelperHierarchyTrait;
-
     /**
-     * The 3-letter ISO 4217 currency code indicating the currency to use
-     *
-     * @var string
+     * @param non-empty-string $defaultLocale
+     * @param non-empty-string $defaultCurrency
      */
-    protected $currencyCode;
-
-    /**
-     * Formatter instances
-     *
-     * @var array<string, NumberFormatter>
-     */
-    protected $formatters = [];
-
-    /**
-     * Locale to use instead of the default
-     *
-     * @var string
-     */
-    protected $locale;
-
-    /**
-     * Currency pattern
-     *
-     * @var string
-     */
-    protected $currencyPattern;
-
-    /**
-     * If set to true, the currency will be returned with two decimals
-     *
-     * @var bool
-     */
-    protected $showDecimals = true;
-
-    /**
-     * Special condition to be checked due to ICU bug:
-     * http://bugs.icu-project.org/trac/ticket/10997
-     *
-     * @var bool
-     */
-    protected $correctionNeeded = false;
-
-    /**
-     * Format a number
-     *
-     * @param  float       $number
-     * @param  string|null $currencyCode
-     * @param  bool|null   $showDecimals
-     * @param  string|null $locale
-     * @param  string|null $pattern
-     * @return string
-     */
-    public function __invoke(
-        $number,
-        $currencyCode = null,
-        $showDecimals = null,
-        $locale = null,
-        $pattern = null
+    public function __construct(
+        private string $defaultLocale,
+        private string $defaultCurrency,
+        private Currencies $currencies,
+        private CurrencySymbolStyle $symbolStyle,
     ) {
-        if (null === $locale) {
-            $locale = $this->getLocale();
-        }
-        if (null === $currencyCode) {
-            $currencyCode = $this->getCurrencyCode();
-        }
-        if (null === $showDecimals) {
-            $showDecimals = $this->shouldShowDecimals();
-        }
-        if (null === $pattern) {
-            $pattern = $this->getCurrencyPattern();
-        }
-
-        return $this->formatCurrency($number, $currencyCode, $showDecimals, $locale, $pattern);
     }
 
-    /**
-     * Format a number
-     *
-     * @param  float  $number
-     * @param  string $currencyCode
-     * @param  bool   $showDecimals
-     * @param  string $locale
-     * @param  string $pattern
-     * @return string
-     */
-    protected function formatCurrency(
-        $number,
-        $currencyCode,
-        $showDecimals,
-        $locale,
-        $pattern
-    ) {
-        $formatterId = md5($locale);
-
-        if (! isset($this->formatters[$formatterId])) {
-            $this->formatters[$formatterId] = new NumberFormatter(
-                $locale,
-                NumberFormatter::CURRENCY
-            );
-        }
-
-        if ($pattern !== null) {
-            $this->formatters[$formatterId]->setPattern($pattern);
-        }
-
-        if ($showDecimals) {
-            $this->formatters[$formatterId]->setAttribute(NumberFormatter::FRACTION_DIGITS, 2);
-            $this->correctionNeeded = false;
-        } else {
-            $this->formatters[$formatterId]->setAttribute(NumberFormatter::FRACTION_DIGITS, 0);
-            $defaultCurrencyCode    = $this->formatters[$formatterId]->getTextAttribute(NumberFormatter::CURRENCY_CODE);
-            $this->correctionNeeded = $defaultCurrencyCode !== $currencyCode;
-        }
-
-        $formattedNumber = $this->formatters[$formatterId]->formatCurrency($number, $currencyCode);
-
-        if ($this->correctionNeeded) {
-            $formattedNumber = $this->fixICUBugForNoDecimals(
-                $formattedNumber,
-                $this->formatters[$formatterId],
-                $locale,
-                $currencyCode
-            );
-        }
-
-        return $formattedNumber;
-    }
-
-    /**
-     * The 3-letter ISO 4217 currency code indicating the currency to use
-     *
-     * @param  string $currencyCode
-     * @return $this
-     */
-    public function setCurrencyCode($currencyCode)
+    public function __invoke(): self
     {
-        $this->currencyCode = $currencyCode;
         return $this;
     }
 
     /**
-     * Get the 3-letter ISO 4217 currency code indicating the currency to use
+     * Format a Money instance
      *
-     * @return string
+     * @param non-empty-string|null $locale
      */
-    public function getCurrencyCode()
-    {
-        return $this->currencyCode;
+    public function money(
+        Money $amount,
+        string|null $locale = null,
+        bool $truncateDecimals = false,
+        CurrencySymbolStyle|null $symbolStyle = null,
+    ): string {
+        return $this->minorUnit(
+            (int) $amount->getAmount(),
+            $amount->getCurrency()->getCode(),
+            $locale,
+            $truncateDecimals,
+            $symbolStyle,
+        );
     }
 
     /**
-     * Set the currency pattern
-     *
-     * @param  string $currencyPattern
-     * @return $this
+     * @param int $amount The amount in minor currency units, i.e. cents or pence
+     * @param non-empty-string|null $currencyCode
+     * @param non-empty-string|null $locale
      */
-    public function setCurrencyPattern($currencyPattern)
-    {
-        $this->currencyPattern = $currencyPattern;
-        return $this;
-    }
-
-    /**
-     * Get the currency pattern
-     *
-     * @return string
-     */
-    public function getCurrencyPattern()
-    {
-        return $this->currencyPattern;
-    }
-
-    /**
-     * Set locale to use instead of the default
-     *
-     * @param  string $locale
-     * @return $this
-     */
-    public function setLocale($locale)
-    {
-        $this->locale = (string) $locale;
-        return $this;
-    }
-
-    /**
-     * Get the locale to use
-     *
-     * @return string
-     */
-    public function getLocale()
-    {
-        if ($this->locale === null) {
-            $this->locale = Locale::getDefault();
-        }
-
-        return $this->locale;
-    }
-
-    /**
-     * Set if the view helper should show two decimals
-     *
-     * @param  bool $showDecimals
-     * @return $this
-     */
-    public function setShouldShowDecimals($showDecimals)
-    {
-        $this->showDecimals = (bool) $showDecimals;
-        return $this;
-    }
-
-    /**
-     * Get if the view helper should show two decimals
-     *
-     * @return bool
-     */
-    public function shouldShowDecimals()
-    {
-        return $this->showDecimals;
-    }
-
-    /**
-     * @param string          $formattedNumber
-     * @param string          $locale
-     * @param string          $currencyCode
-     * @return string
-     */
-    private function fixICUBugForNoDecimals($formattedNumber, NumberFormatter $formatter, $locale, $currencyCode)
-    {
-        $pattern = sprintf(
-            '/\%s\d+(\s?%s)?$/u',
-            $formatter->getSymbol(NumberFormatter::DECIMAL_SEPARATOR_SYMBOL),
-            preg_quote($this->getCurrencySymbol($locale, $currencyCode), '/')
+    public function minorUnit(
+        int $amount,
+        string|null $currencyCode = null,
+        string|null $locale = null,
+        bool $truncateDecimals = false,
+        CurrencySymbolStyle|null $symbolStyle = null,
+    ): string {
+        $currency  = new Currency($currencyCode ?? $this->defaultCurrency);
+        $subunit   = $this->currencies->subunitFor($currency);
+        $formatter = new NumberFormatter(
+            $locale ?? $this->defaultLocale,
+            NumberFormatter::CURRENCY,
         );
 
-        return preg_replace($pattern, '$1', $formattedNumber);
+        $symbolStyle ??= $this->symbolStyle;
+        $formatter->setPattern($symbolStyle->applyTo($formatter->getPattern()));
+
+        if (strlen((string) $amount) > $subunit) {
+            $minor = substr((string) $amount, 0 - $subunit);
+            $major = substr((string) $amount, 0, strlen((string) $amount) - $subunit);
+            $float = (float) sprintf('%s.%s', $major, $minor);
+        } else {
+            $float = (float) sprintf('0.%s', str_pad((string) $amount, $subunit, '0', STR_PAD_LEFT));
+        }
+
+        if ($truncateDecimals) {
+            $formatter->setAttribute(NumberFormatter::FRACTION_DIGITS, 0);
+        } else {
+            $formatter->setAttribute(NumberFormatter::FRACTION_DIGITS, $subunit);
+        }
+
+        return mb_trim($formatter->formatCurrency($float, $currency->getCode()), ' ');
     }
 
     /**
-     * @param string $locale
-     * @param string $currencyCode
-     * @return string
+     * @param int|float $amount The amount in major currency units, i.e. pounds or dollars
+     * @param non-empty-string|null $currencyCode
+     * @param non-empty-string|null $locale
      */
-    private function getCurrencySymbol($locale, $currencyCode)
-    {
-        $numberFormatter = new NumberFormatter($locale . '@currency=' . $currencyCode, NumberFormatter::CURRENCY);
+    public function amount(
+        int|float $amount,
+        string|null $currencyCode = null,
+        string|null $locale = null,
+        bool $truncateDecimals = false,
+        CurrencySymbolStyle|null $symbolStyle = null,
+    ): string {
+        $currency  = new Currency($currencyCode ?? $this->defaultCurrency);
+        $subunit   = $this->currencies->subunitFor($currency);
+        $formatter = new NumberFormatter(
+            $locale ?? $this->defaultLocale,
+            NumberFormatter::CURRENCY,
+        );
 
-        return $numberFormatter->getSymbol(NumberFormatter::CURRENCY_SYMBOL);
+        $symbolStyle ??= $this->symbolStyle;
+        $formatter->setPattern($symbolStyle->applyTo($formatter->getPattern()));
+
+        if ($truncateDecimals) {
+            $formatter->setAttribute(NumberFormatter::FRACTION_DIGITS, 0);
+        } else {
+            $formatter->setAttribute(NumberFormatter::FRACTION_DIGITS, $subunit);
+        }
+
+        return $formatter->formatCurrency($amount, $currency->getCode());
     }
 }
