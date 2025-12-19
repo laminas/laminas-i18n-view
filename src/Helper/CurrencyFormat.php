@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Laminas\I18n\View\Helper;
 
+use Laminas\I18n\View\Internal\Polyfill;
 use Money\Currencies;
 use Money\Currency;
 use Money\Money;
 use NumberFormatter;
 
-use function mb_trim;
 use function sprintf;
 use function str_pad;
 use function strlen;
@@ -95,7 +95,7 @@ final readonly class CurrencyFormat
             $formatter->setAttribute(NumberFormatter::FRACTION_DIGITS, $subunit);
         }
 
-        return mb_trim($formatter->formatCurrency($float, $currency->getCode()), ' ');
+        return Polyfill::mbTrim($formatter->formatCurrency($float, $currency->getCode()));
     }
 
     /**
