@@ -20,7 +20,7 @@ use function is_string;
  *      - http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.html
  *      - https://developer.mozilla.org/en-US/docs/Localization_and_Plurals
  */
-final class Plural
+final readonly class Plural
 {
     private PluralRule $rule;
 
