@@ -42,6 +42,16 @@ final class DateFormatTest extends TestCase
             ['de_DE', null, null, null, '04.03.20, 22:33'],
             ['en_US', null, null, null, '3/4/20, 10:33 PM'],
             // .
+            [null,    IntlDateFormatter::SHORT, null, null, '04/03/2020, 22:33'],
+            ['en_GB', IntlDateFormatter::SHORT, null, null, '04/03/2020, 22:33'],
+            ['de_DE', IntlDateFormatter::SHORT, null, null, '04.03.20, 22:33'],
+            ['en_US', IntlDateFormatter::SHORT, null, null, '3/4/20, 10:33 PM'],
+            // .
+            [null,    IntlDateFormatter::NONE, null, null, '22:33'],
+            ['en_GB', IntlDateFormatter::NONE, null, null, '22:33'],
+            ['de_DE', IntlDateFormatter::NONE, null, null, '22:33'],
+            ['en_US', IntlDateFormatter::NONE, null, null, '10:33 PM'],
+            // .
             [null,    IntlDateFormatter::MEDIUM, null, null, '4 Mar 2020, 22:33'],
             ['en_GB', IntlDateFormatter::MEDIUM, null, null, '4 Mar 2020, 22:33'],
             ['de_DE', IntlDateFormatter::MEDIUM, null, null, '04.03.2020, 22:33'],
@@ -52,15 +62,20 @@ final class DateFormatTest extends TestCase
             ['de_DE', IntlDateFormatter::LONG, null, null, '4. März 2020 um 22:33'],
             ['en_US', IntlDateFormatter::LONG, null, null, 'March 4, 2020 at 10:33 PM'],
             // .
-            [null,    IntlDateFormatter::TRADITIONAL, null, null, 'Wednesday, 4 March 2020 at 22:33'],
-            ['en_GB', IntlDateFormatter::TRADITIONAL, null, null, 'Wednesday, 4 March 2020 at 22:33'],
-            ['de_DE', IntlDateFormatter::TRADITIONAL, null, null, 'Mittwoch, 4. März 2020 um 22:33'],
-            ['en_US', IntlDateFormatter::TRADITIONAL, null, null, 'Wednesday, March 4, 2020 at 10:33 PM'],
-            // .
             [null,    IntlDateFormatter::FULL, null, null, 'Wednesday, 4 March 2020 at 22:33'],
             ['en_GB', IntlDateFormatter::FULL, null, null, 'Wednesday, 4 March 2020 at 22:33'],
             ['de_DE', IntlDateFormatter::FULL, null, null, 'Mittwoch, 4. März 2020 um 22:33'],
             ['en_US', IntlDateFormatter::FULL, null, null, 'Wednesday, March 4, 2020 at 10:33 PM'],
+            // .
+            [null,    null, IntlDateFormatter::NONE, null, '04/03/2020'],
+            ['en_GB', null, IntlDateFormatter::NONE, null, '04/03/2020'],
+            ['de_DE', null, IntlDateFormatter::NONE, null, '04.03.20'],
+            ['en_US', null, IntlDateFormatter::NONE, null, '3/4/20'],
+            // .
+            [null,    null, IntlDateFormatter::SHORT, null, '04/03/2020, 22:33'],
+            ['en_GB', null, IntlDateFormatter::SHORT, null, '04/03/2020, 22:33'],
+            ['de_DE', null, IntlDateFormatter::SHORT, null, '04.03.20, 22:33'],
+            ['en_US', null, IntlDateFormatter::SHORT, null, '3/4/20, 10:33 PM'],
             // .
             [null,    null, IntlDateFormatter::MEDIUM, null, '04/03/2020, 22:33:44'],
             ['en_GB', null, IntlDateFormatter::MEDIUM, null, '04/03/2020, 22:33:44'],
@@ -76,11 +91,6 @@ final class DateFormatTest extends TestCase
             ['en_GB', null, IntlDateFormatter::FULL, null, '04/03/2020, 22:33:44 Coordinated Universal Time'],
             ['de_DE', null, IntlDateFormatter::FULL, null, '04.03.20, 22:33:44 Koordinierte Weltzeit'],
             ['en_US', null, IntlDateFormatter::FULL, null, '3/4/20, 10:33:44 PM Coordinated Universal Time'],
-            // .
-            [null,    null, IntlDateFormatter::TRADITIONAL, null, '04/03/2020, 22:33:44 Coordinated Universal Time'],
-            ['en_GB', null, IntlDateFormatter::TRADITIONAL, null, '04/03/2020, 22:33:44 Coordinated Universal Time'],
-            ['de_DE', null, IntlDateFormatter::TRADITIONAL, null, '04.03.20, 22:33:44 Koordinierte Weltzeit'],
-            ['en_US', null, IntlDateFormatter::TRADITIONAL, null, '3/4/20, 10:33:44 PM Coordinated Universal Time'],
         ];
     }
 
