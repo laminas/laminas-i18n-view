@@ -6,12 +6,12 @@ namespace Laminas\I18n\View\Helper;
 
 use function preg_replace;
 
-enum CurrencySymbolStyle
+enum CurrencySymbolStyle: string
 {
-    case None;
-    case Standard;
-    case ISOCode;
-    case Name;
+    case None     = 'none';
+    case Standard = 'standard';
+    case ISOCode  = 'iso';
+    case Name     = 'name';
 
     public function applyTo(string $pattern): string
     {
