@@ -34,12 +34,35 @@ final class PluralTest extends TestCase
     #[DataProvider('pluralsTestProvider')]
     public function testGetCorrectPlurals(string $pluralRule, array $strings, int $number, string $expected): void
     {
-        $helper = new PluralHelper($pluralRule);
+        $helper = new PluralHelper('en-GB', ['en' => Rule::fromString($pluralRule)]);
         $result = $helper->__invoke($strings, $number);
         self::assertSame($expected, $result);
+    }
 
-        $helper = new PluralHelper(Rule::fromString($pluralRule));
-        $result = $helper->__invoke($strings, $number);
-        self::assertSame($expected, $result);
+    public function testMultiplePluralRulesCanBeDefinedAndUsed(): void
+    {
+        $helper = new PluralHelper(
+            'en-GB',
+            [
+                'en' => Rule::fromString('nplurals=2; plural=(n==1 ? 0 : 1)'),
+                'fr' => Rule::fromString('nplurals=2; plural=(n>=2 ? 1 : 0)'),
+            ],
+        );
+
+        self::assertSame('single', $helper->__invoke(['single', 'plural'], 0, 'fr-FR'));
+        self::assertSame('single', $helper->__invoke(['single', 'plural'], 1, 'fr-FR'));
+        self::assertSame('plural', $helper->__invoke(['single', 'plural'], 2, 'fr-FR'));
+
+        self::assertSame('plural', $helper->__invoke(['single', 'plural'], 0));
+        self::assertSame('single', $helper->__invoke(['single', 'plural'], 1));
+        self::assertSame('plural', $helper->__invoke(['single', 'plural'], 2));
+
+        self::assertSame('plural', $helper->__invoke(['single', 'plural'], 0, 'en_US'));
+        self::assertSame('single', $helper->__invoke(['single', 'plural'], 1, 'en_US'));
+        self::assertSame('plural', $helper->__invoke(['single', 'plural'], 2, 'en_US'));
+
+        self::assertSame('plural', $helper->__invoke(['single', 'plural'], 0, 'en-GB'));
+        self::assertSame('single', $helper->__invoke(['single', 'plural'], 1, 'en-GB'));
+        self::assertSame('plural', $helper->__invoke(['single', 'plural'], 2, 'en-GB'));
     }
 }

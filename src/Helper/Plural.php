@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Laminas\I18n\View\Helper;
 
+use Laminas\I18n\Exception\RuntimeException;
 use Laminas\I18n\Translator\Plural\Rule as PluralRule;
+use Locale;
 
-use function is_string;
+use function sprintf;
 
 /**
  * Helper for rendering text based on a count number (like the I18n plural translation helper, but when translation
@@ -17,18 +19,19 @@ use function is_string;
  * future.
  *
  * However, you can find most of the up-to-date plural rules for most languages in those links:
- *      - http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.html
- *      - https://developer.mozilla.org/en-US/docs/Localization_and_Plurals
+ *      - https://www.unicode.org/cldr/charts/48/supplemental/language_plural_rules.html
+ *      - https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Intl/PluralRules
  */
 final readonly class Plural
 {
-    private PluralRule $rule;
-
-    public function __construct(PluralRule|string $rule)
-    {
-        $this->rule = is_string($rule)
-            ? PluralRule::fromString($rule)
-            : $rule;
+    /**
+     * @param non-empty-string $defaultLocale
+     * @param array<string, PluralRule> $rules
+     */
+    public function __construct(
+        private string $defaultLocale,
+        private array $rules,
+    ) {
     }
 
     /**
@@ -36,11 +39,23 @@ final readonly class Plural
      * otherwise), this picks the right string according to plural rules of the locale
      *
      * @param array<int, string> $strings
+     * @param non-empty-string|null $locale
      */
-    public function __invoke(array $strings, int $number): string
-    {
-        $pluralIndex = $this->rule->evaluate($number);
+    public function __invoke(
+        array $strings,
+        int $number,
+        string|null $locale = null,
+    ): string {
+        $key = (string) Locale::getPrimaryLanguage($locale ?? $this->defaultLocale);
+        if ($key === '' || ! isset($this->rules[$key])) {
+            throw new RuntimeException(sprintf(
+                'A plural rule has not been defined for the language "%s"',
+                $key,
+            ));
+        }
 
-        return $strings[$pluralIndex];
+        $pluralIndex = $this->rules[$key]->evaluate($number);
+
+        return $strings[$pluralIndex] ?? '';
     }
 }
