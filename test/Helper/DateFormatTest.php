@@ -11,7 +11,9 @@ use Laminas\I18n\View\Helper\DateFormat;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
+use function array_map;
 use function assert;
+use function is_array;
 use function str_replace;
 
 final class DateFormatTest extends TestCase
@@ -32,7 +34,7 @@ final class DateFormatTest extends TestCase
      *     1: int|null,
      *     2: int|null,
      *     3: string|null,
-     *     4: string,
+     *     4: string|list<string>,
      * }>
      */
     public static function fixedDateProvider(): array
@@ -63,8 +65,26 @@ final class DateFormatTest extends TestCase
             ['de_DE', IntlDateFormatter::LONG, null, null, '4. März 2020 um 22:33'],
             ['en_US', IntlDateFormatter::LONG, null, null, 'March 4, 2020 at 10:33 PM'],
             // .
-            [null,    IntlDateFormatter::FULL, null, null, 'Wednesday, 4 March 2020 at 22:33'],
-            ['en_GB', IntlDateFormatter::FULL, null, null, 'Wednesday, 4 March 2020 at 22:33'],
+            [
+                null,
+                IntlDateFormatter::FULL,
+                null,
+                null,
+                [
+                    'Wednesday, 4 March 2020 at 22:33',
+                    'Wednesday 4 March 2020 at 22:33',
+                ],
+            ],
+            [
+                'en_GB',
+                IntlDateFormatter::FULL,
+                null,
+                null,
+                [
+                    'Wednesday, 4 March 2020 at 22:33',
+                    'Wednesday 4 March 2020 at 22:33',
+                ],
+            ],
             ['de_DE', IntlDateFormatter::FULL, null, null, 'Mittwoch, 4. März 2020 um 22:33'],
             ['en_US', IntlDateFormatter::FULL, null, null, 'Wednesday, March 4, 2020 at 10:33 PM'],
             // .
@@ -97,6 +117,7 @@ final class DateFormatTest extends TestCase
 
     /**
      * @param non-empty-string|null $locale
+     * @param string|list<string> $expect
      */
     #[DataProvider('fixedDateProvider')]
     public function testBasicBehaviourOfDefaults(
@@ -104,7 +125,7 @@ final class DateFormatTest extends TestCase
         int|null $dateType,
         int|null $timeType,
         string|null $pattern,
-        string $expect,
+        string|array $expect,
     ): void {
         $helper = new DateFormat(
             'en_GB',
@@ -191,14 +212,19 @@ final class DateFormatTest extends TestCase
      *
      * Different versions of intl/icu may use slightly different patterns, or use non-breaking-spaces rather than ascii
      * spaces for example… This method is intended to smooth out those minor differences during comparison
+     *
+     * @param string|list<string> $expect
      */
-    public static function assertMbSame(string $expect, string $actual, string $message = ''): void
+    public static function assertMbSame(string|array $expect, string $actual, string $message = ''): void
     {
         $replace = static fn(string $value): string => str_replace(["\u{00A0}", "\u{202F}"], ' ', $value);
 
-        self::assertSame(
-            $replace($expect),
+        $expect = is_array($expect) ? $expect : [$expect];
+        $expect = array_map($replace, $expect);
+
+        self::assertContains(
             $replace($actual),
+            $expect,
             $message,
         );
     }
