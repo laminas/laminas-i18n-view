@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 use function assert;
+use function str_replace;
 
 final class DateFormatTest extends TestCase
 {
@@ -112,7 +113,7 @@ final class DateFormatTest extends TestCase
             IntlDateFormatter::SHORT,
         );
 
-        self::assertSame(
+        self::assertMbSame(
             $expect,
             $helper->__invoke(
                 $this->date,
@@ -133,7 +134,7 @@ final class DateFormatTest extends TestCase
             IntlDateFormatter::SHORT,
         );
 
-        self::assertSame('Mar 20', $helper->__invoke(date: $this->date, pattern: 'MMM YY'));
+        self::assertMbSame('Mar 20', $helper->__invoke(date: $this->date, pattern: 'MMM YY'));
     }
 
     public function testIntegerDateIsTreatedAsTimestampInTheDefaultTimeZone(): void
@@ -150,7 +151,7 @@ final class DateFormatTest extends TestCase
         $expect       = $now->setTimezone(new DateTimeZone('America/New_York'));
         $expectFormat = $helper->__invoke($expect);
 
-        self::assertSame(
+        self::assertMbSame(
             $expectFormat,
             $helper->__invoke($now->getTimestamp()),
         );
@@ -171,7 +172,7 @@ final class DateFormatTest extends TestCase
         );
 
         $value = $helper->__invoke(date: $date, pattern: $pattern);
-        self::assertSame('0000 BC', $value);
+        self::assertMbSame('0000 BC', $value);
 
         $helper = new DateFormat(
             'en_GB@calendar=buddhist',
@@ -182,6 +183,23 @@ final class DateFormatTest extends TestCase
         );
 
         $value = $helper->__invoke(date: $date, pattern: $pattern);
-        self::assertSame('0000 BE', $value);
+        self::assertMbSame('0000 BE', $value);
+    }
+
+    /**
+     * Assert 2 strings are identical, ignoring multibyte whitespace (NBSP et al)
+     *
+     * Different versions of intl/icu may use slightly different patterns, or use non-breaking-spaces rather than ascii
+     * spaces for example… This method is intended to smooth out those minor differences during comparison
+     */
+    public static function assertMbSame(string $expect, string $actual, string $message = ''): void
+    {
+        $replace = static fn(string $value): string => str_replace(["\u{00A0}", "\u{202F}"], ' ', $value);
+
+        self::assertSame(
+            $replace($expect),
+            $replace($actual),
+            $message,
+        );
     }
 }
