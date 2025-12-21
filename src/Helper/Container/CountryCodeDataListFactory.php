@@ -16,6 +16,12 @@ use function is_array;
 use function is_string;
 use function iterator_to_array;
 
+/**
+ * @internal
+ *
+ * @psalm-internal Laminas\I18n
+ * @psalm-internal LaminasTest\I18n
+ */
 final class CountryCodeDataListFactory
 {
     public function __invoke(ContainerInterface $container): CountryCodeDataList
