@@ -17,11 +17,16 @@ use function is_int;
  */
 final readonly class DateFormat
 {
+    /**
+     * @param non-empty-string $defaultLocale
+     * @param IntlDateFormatter::GREGORIAN|IntlDateFormatter::TRADITIONAL $calendarType
+     */
     public function __construct(
         private string $defaultLocale,
         private DateTimeZone $defaultTimeZone,
         private int $defaultDateType,
         private int $defaultTimeType,
+        private int $calendarType = IntlDateFormatter::GREGORIAN,
     ) {
     }
 
@@ -47,8 +52,8 @@ final readonly class DateFormat
             $locale ?? $this->defaultLocale,
             $dateType ?? $this->defaultDateType,
             $timeType ?? $this->defaultTimeType,
-            $date->getTimezone()->getName(),
-            IntlDateFormatter::GREGORIAN,
+            $date->getTimezone(),
+            $this->calendarType,
             $pattern ?? ''
         );
 

@@ -155,4 +155,33 @@ final class DateFormatTest extends TestCase
             $helper->__invoke($now->getTimestamp()),
         );
     }
+
+    public function testCalendarType(): void
+    {
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', '0-12-25');
+        self::assertNotFalse($date);
+        $pattern = 'YYYY G';
+
+        $helper = new DateFormat(
+            'en_GB',
+            new DateTimeZone('Europe/London'),
+            IntlDateFormatter::FULL,
+            IntlDateFormatter::NONE,
+            IntlDateFormatter::GREGORIAN,
+        );
+
+        $value = $helper->__invoke(date: $date, pattern: $pattern);
+        self::assertSame('0000 BC', $value);
+
+        $helper = new DateFormat(
+            'en_GB@calendar=buddhist',
+            new DateTimeZone('Europe/London'),
+            IntlDateFormatter::FULL,
+            IntlDateFormatter::NONE,
+            IntlDateFormatter::TRADITIONAL,
+        );
+
+        $value = $helper->__invoke(date: $date, pattern: $pattern);
+        self::assertSame('0000 BE', $value);
+    }
 }
