@@ -4,137 +4,59 @@ declare(strict_types=1);
 
 namespace Laminas\I18n\View\Helper;
 
+use DateTimeImmutable;
 use DateTimeInterface;
-use IntlCalendar;
+use DateTimeZone;
 use IntlDateFormatter;
-use Laminas\View\Helper\AbstractHelper;
-use Laminas\View\Helper\DeprecatedAbstractHelperHierarchyTrait;
-use Locale;
 
-use function date_default_timezone_get;
-use function md5;
+use function assert;
+use function is_int;
 
 /**
  * View helper for formatting dates.
- *
- * @final
  */
-class DateFormat extends AbstractHelper
+final readonly class DateFormat
 {
-    use DeprecatedAbstractHelperHierarchyTrait;
-
     /**
-     * Locale to use instead of the default
-     *
-     * @var string
+     * @param non-empty-string $defaultLocale
+     * @param IntlDateFormatter::GREGORIAN|IntlDateFormatter::TRADITIONAL $calendarType
      */
-    protected $locale;
-
-    /**
-     * Timezone to use
-     *
-     * @var string
-     */
-    protected $timezone;
-
-    /**
-     * Formatter instances
-     *
-     * @var array<string, IntlDateFormatter>
-     */
-    protected $formatters = [];
+    public function __construct(
+        private string $defaultLocale,
+        private DateTimeZone $defaultTimeZone,
+        private int $defaultDateType,
+        private int $defaultTimeType,
+        private int $calendarType = IntlDateFormatter::GREGORIAN,
+    ) {
+    }
 
     /**
      * Format a date
      *
-     * @param  DateTimeInterface|IntlCalendar|int|array $date
-     * @param  int                                      $dateType
-     * @param  int                                      $timeType
-     * @param  string|null                              $locale
-     * @param  string|null                              $pattern
-     * @return string
+     * @param non-empty-string|null $locale
      */
     public function __invoke(
-        $date,
-        $dateType = IntlDateFormatter::NONE,
-        $timeType = IntlDateFormatter::NONE,
-        $locale = null,
-        $pattern = null
-    ) {
-        if ($locale === null) {
-            $locale = $this->getLocale();
+        DateTimeInterface|int $date,
+        string|null $locale = null,
+        int|null $dateType = null,
+        int|null $timeType = null,
+        string|null $pattern = null
+    ): string {
+        if (is_int($date)) {
+            $date = DateTimeImmutable::createFromFormat('U', (string) $date);
+            assert($date instanceof DateTimeInterface);
+            $date = $date->setTimezone($this->defaultTimeZone);
         }
 
-        $timezone    = $this->getTimezone();
-        $formatterId = md5($dateType . "\0" . $timeType . "\0" . $locale . "\0" . (string) $pattern . "\0" . $timezone);
+        $formatter = new IntlDateFormatter(
+            $locale ?? $this->defaultLocale,
+            $dateType ?? $this->defaultDateType,
+            $timeType ?? $this->defaultTimeType,
+            $date->getTimezone(),
+            $this->calendarType,
+            $pattern ?? ''
+        );
 
-        if (! isset($this->formatters[$formatterId])) {
-            $this->formatters[$formatterId] = new IntlDateFormatter(
-                $locale,
-                $dateType,
-                $timeType,
-                $timezone,
-                IntlDateFormatter::GREGORIAN,
-                $pattern ?? ''
-            );
-        }
-
-        return $this->formatters[$formatterId]->format($date);
-    }
-
-    /**
-     * Set locale to use instead of the default
-     *
-     * @param  string $locale
-     * @return $this
-     */
-    public function setLocale($locale)
-    {
-        $this->locale = (string) $locale;
-        return $this;
-    }
-
-    /**
-     * Get the locale to use
-     *
-     * @return string
-     */
-    public function getLocale()
-    {
-        if ($this->locale === null) {
-            $this->locale = Locale::getDefault();
-        }
-
-        return $this->locale;
-    }
-
-    /**
-     * Set timezone to use instead of the default
-     *
-     * @param  string $timezone
-     * @return $this
-     */
-    public function setTimezone($timezone)
-    {
-        $this->timezone = $timezone;
-        foreach ($this->formatters as $formatter) {
-            $formatter->setTimeZone($this->timezone);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Get the timezone to use
-     *
-     * @return string
-     */
-    public function getTimezone()
-    {
-        if (! $this->timezone) {
-            return date_default_timezone_get();
-        }
-
-        return $this->timezone;
+        return $formatter->format($date);
     }
 }

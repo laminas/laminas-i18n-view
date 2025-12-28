@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Laminas\I18n\View\Helper;
 
-use Laminas\I18n\Exception;
+use Laminas\I18n\Exception\RuntimeException;
 use Laminas\I18n\Translator\Plural\Rule as PluralRule;
-use Laminas\View\Helper\AbstractHelper;
-use Laminas\View\Helper\DeprecatedAbstractHelperHierarchyTrait;
+use Locale;
 
-use function is_array;
+use function sprintf;
 
 /**
  * Helper for rendering text based on a count number (like the I18n plural translation helper, but when translation
@@ -20,71 +19,43 @@ use function is_array;
  * future.
  *
  * However, you can find most of the up-to-date plural rules for most languages in those links:
- *      - http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.html
- *      - https://developer.mozilla.org/en-US/docs/Localization_and_Plurals
- *
- * @final
+ *      - https://www.unicode.org/cldr/charts/48/supplemental/language_plural_rules.html
+ *      - https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Intl/PluralRules
  */
-class Plural extends AbstractHelper
+final readonly class Plural
 {
-    use DeprecatedAbstractHelperHierarchyTrait;
-
     /**
-     * Plural rule to use
-     *
-     * @var PluralRule|null
+     * @param non-empty-string $defaultLocale
+     * @param array<string, PluralRule> $rules
      */
-    protected $rule;
+    public function __construct(
+        private string $defaultLocale,
+        private array $rules,
+    ) {
+    }
 
     /**
      * Given an array of strings, a number and, if wanted, an optional locale (the default one is used
      * otherwise), this picks the right string according to plural rules of the locale
      *
-     * @param  array|string $strings
-     * @param  int          $number
-     * @throws Exception\InvalidArgumentException
-     * @return string
+     * @param array<int, string> $strings
+     * @param non-empty-string|null $locale
      */
-    public function __invoke($strings, $number)
-    {
-        $rule = $this->getPluralRule();
-        if ($rule === null) {
-            throw new Exception\InvalidArgumentException('No plural rule was set');
+    public function __invoke(
+        array $strings,
+        int $number,
+        string|null $locale = null,
+    ): string {
+        $key = (string) Locale::getPrimaryLanguage($locale ?? $this->defaultLocale);
+        if ($key === '' || ! isset($this->rules[$key])) {
+            throw new RuntimeException(sprintf(
+                'A plural rule has not been defined for the language "%s"',
+                $key,
+            ));
         }
 
-        if (! is_array($strings)) {
-            $strings = (array) $strings;
-        }
+        $pluralIndex = $this->rules[$key]->evaluate($number);
 
-        $pluralIndex = $rule->evaluate($number);
-
-        return $strings[$pluralIndex];
-    }
-
-    /**
-     * Set the plural rule to use
-     *
-     * @param  PluralRule|string $pluralRule
-     * @return $this
-     */
-    public function setPluralRule($pluralRule)
-    {
-        if (! $pluralRule instanceof PluralRule) {
-            $pluralRule = PluralRule::fromString($pluralRule);
-        }
-
-        $this->rule = $pluralRule;
-
-        return $this;
-    }
-
-    /**
-     * Get the plural rule to use
-     *
-     * @return PluralRule|null
-     */
-    public function getPluralRule()
-    {
-        return $this->rule;
+        return $strings[$pluralIndex] ?? '';
     }
 }

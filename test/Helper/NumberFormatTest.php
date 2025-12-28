@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace LaminasTest\I18n\View\Helper;
 
 use Laminas\I18n\View\Helper\NumberFormat as NumberFormatHelper;
-use Locale;
 use NumberFormatter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -19,11 +18,27 @@ final class NumberFormatTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->helper = new NumberFormatHelper();
+        $this->helper = new NumberFormatHelper(
+            'en_GB',
+            null,
+            NumberFormatter::DECIMAL,
+            NumberFormatter::TYPE_DOUBLE,
+            [],
+        );
     }
 
-    /** @return array<array-key, array{0: string, 1: int, 2: int, 3: int|null, 4: array<int, string>, 5: float, 6: string}> */
-    public static function currencyTestsDataProvider(): array
+    /**
+     * @return list<array{
+     *     0: non-empty-string|null,
+     *     1: int,
+     *     2: NumberFormatter::TYPE_*,
+     *     3: int|null,
+     *     4: array<int, string>,
+     *     5: float,
+     *     6: string,
+     * }>
+     */
+    public static function numberFormatProvider(): array
     {
         return [
             [
@@ -136,38 +151,123 @@ final class NumberFormatTest extends TestCase
                 -1234567.891234567890000,
                 'MINUS123,456,789%',
             ],
+            [
+                null,
+                NumberFormatter::DECIMAL,
+                NumberFormatter::TYPE_DOUBLE,
+                null,
+                [],
+                123.45,
+                '123.45',
+            ],
+            [
+                null,
+                NumberFormatter::DECIMAL,
+                NumberFormatter::TYPE_DOUBLE,
+                null,
+                [],
+                123,
+                '123',
+            ],
+            [
+                null,
+                NumberFormatter::DECIMAL,
+                NumberFormatter::TYPE_INT64,
+                null,
+                [],
+                123.45,
+                '123',
+            ],
+            [
+                null,
+                NumberFormatter::DECIMAL,
+                NumberFormatter::TYPE_INT64,
+                null,
+                [],
+                123,
+                '123',
+            ],
+            [
+                null,
+                NumberFormatter::ORDINAL,
+                NumberFormatter::TYPE_INT64,
+                null,
+                [],
+                123,
+                '123rd',
+            ],
+            [
+                null,
+                NumberFormatter::SPELLOUT,
+                NumberFormatter::TYPE_DOUBLE,
+                null,
+                [],
+                123.45,
+                'onehundredtwenty-threepointfourfive',
+            ],
+            [
+                null,
+                NumberFormatter::DURATION,
+                NumberFormatter::TYPE_INT32,
+                null,
+                [],
+                123,
+                '2:03',
+            ],
+            [
+                null,
+                NumberFormatter::DURATION,
+                NumberFormatter::TYPE_INT32,
+                null,
+                [],
+                3601,
+                '1:00:01',
+            ],
+            [
+                null,
+                NumberFormatter::DURATION,
+                NumberFormatter::TYPE_INT32,
+                null,
+                [],
+                86401,
+                '24:00:01',
+            ],
         ];
     }
 
     /**
+     * @param non-empty-string|null $locale
+     * @param NumberFormatter::TYPE_* $formatType
      * @param array<int, string> $textAttributes
      */
-    #[DataProvider('currencyTestsDataProvider')]
+    #[DataProvider('numberFormatProvider')]
     public function testBasic(
-        string $locale,
+        string|null $locale,
         int $formatStyle,
         int $formatType,
-        ?int $decimals,
+        int|null $decimals,
         array $textAttributes,
         float $number,
         string $expected
     ): void {
-        self::assertMbStringEquals($expected, $this->helper->__invoke(
+        self::assertMbStringSame($expected, $this->helper->__invoke(
             $number,
+            $locale,
             $formatStyle,
             $formatType,
-            $locale,
             $decimals,
             $textAttributes
         ));
     }
 
     /**
+     * @param non-empty-string|null $locale
+     * @param NumberFormatter::TYPE_* $formatType
      * @param array<int, string> $textAttributes
      */
-    #[DataProvider('currencyTestsDataProvider')]
+    #[DataProvider('numberFormatProvider')]
     public function testSettersProvideDefaults(
-        string $locale,
+        string|null $locale,
         int $formatStyle,
         int $formatType,
         ?int $decimals,
@@ -175,25 +275,21 @@ final class NumberFormatTest extends TestCase
         float $number,
         string $expected
     ): void {
-        $this->helper
-             ->setLocale($locale)
-             ->setFormatStyle($formatStyle)
-             ->setDecimals($decimals)
-             ->setFormatType($formatType)
-             ->setTextAttributes($textAttributes);
+        $helper = new NumberFormatHelper(
+            $locale ?? 'en_GB',
+            $decimals,
+            $formatStyle,
+            $formatType,
+            $textAttributes,
+        );
 
-        self::assertMbStringEquals($expected, $this->helper->__invoke($number));
+        self::assertMbStringSame($expected, $helper->__invoke($number));
     }
 
-    public function testDefaultLocale(): void
-    {
-        self::assertEquals(Locale::getDefault(), $this->helper->getLocale());
-    }
-
-    public static function assertMbStringEquals(string $expected, string $test, string $message = ''): void
+    public static function assertMbStringSame(string $expected, string $test, string $message = ''): void
     {
         $expected = str_replace(["\xC2\xA0", ' '], '', $expected);
         $test     = str_replace(["\xC2\xA0", ' '], '', $test);
-        self::assertEquals($expected, $test, $message);
+        self::assertSame($expected, $test, $message);
     }
 }

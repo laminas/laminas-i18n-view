@@ -12,10 +12,11 @@
         "ext-intl": "*",
         "ext-mbstring": "*",
         "laminas/laminas-escaper": "^2.18",
-        "laminas/laminas-i18n": "^2.32.1",
-        "laminas/laminas-servicemanager": "^3.24.0",
+        "laminas/laminas-i18n": "^3.0.x-dev",
+        "laminas/laminas-servicemanager": "^4.5.0",
         "laminas/laminas-translator": "^1.2",
-        "laminas/laminas-view": "^2.44.0",
+        "laminas/laminas-view": "^3.0.1",
+        "moneyphp/money": "^4.8",
         "psr/container": "^1.0 || ^2.0"
     },
     "require-dev": {

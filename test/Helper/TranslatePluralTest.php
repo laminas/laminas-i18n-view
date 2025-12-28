@@ -4,26 +4,25 @@ declare(strict_types=1);
 
 namespace LaminasTest\I18n\View\Helper;
 
-use Laminas\I18n\Exception\RuntimeException;
-use Laminas\I18n\Translator\Translator;
 use Laminas\I18n\View\Helper\TranslatePlural as TranslatePluralHelper;
+use Laminas\Translator\TranslatorInterface;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 final class TranslatePluralTest extends TestCase
 {
     /** @var TranslatePluralHelper */
     public $helper;
+    private TranslatorInterface&MockObject $translator;
 
     protected function setUp(): void
     {
-        parent::setUp();
-        $this->helper = new TranslatePluralHelper();
-    }
-
-    public function testInvokingWithoutTranslatorWillRaiseException(): void
-    {
-        $this->expectException(RuntimeException::class);
-        $this->helper->__invoke('singular', 'plural', 1);
+        $this->translator = $this->createMock(TranslatorInterface::class);
+        $this->helper     = new TranslatePluralHelper(
+            $this->translator,
+            'default',
+            'en_US',
+        );
     }
 
     public function testDefaultInvokeArguments(): void
@@ -33,15 +32,12 @@ final class TranslatePluralTest extends TestCase
         $numberInput   = 1;
         $expected      = 'translated';
 
-        $translatorMock = $this->createMock(Translator::class);
-        $translatorMock->expects(self::once())
+        $this->translator->expects(self::once())
             ->method('translatePlural')
-            ->with($singularInput, $pluralInput, $numberInput, 'default', null)
+            ->with($singularInput, $pluralInput, $numberInput, 'default', 'en_US')
             ->willReturn($expected);
 
-        $this->helper->setTranslator($translatorMock);
-
-        self::assertEquals($expected, $this->helper->__invoke($singularInput, $pluralInput, $numberInput));
+        self::assertSame($expected, $this->helper->__invoke($singularInput, $pluralInput, $numberInput));
     }
 
     public function testCustomInvokeArguments(): void
@@ -51,17 +47,14 @@ final class TranslatePluralTest extends TestCase
         $numberInput   = 1;
         $expected      = 'translated';
         $textDomain    = 'textDomain';
-        $locale        = 'en_US';
+        $locale        = 'de_DE';
 
-        $translatorMock = $this->createMock(Translator::class);
-        $translatorMock->expects(self::once())
+        $this->translator->expects(self::once())
             ->method('translatePlural')
             ->with($singularInput, $pluralInput, $numberInput, $textDomain, $locale)
             ->willReturn($expected);
 
-        $this->helper->setTranslator($translatorMock);
-
-        self::assertEquals($expected, $this->helper->__invoke(
+        self::assertSame($expected, $this->helper->__invoke(
             $singularInput,
             $pluralInput,
             $numberInput,
