@@ -12,7 +12,7 @@
         "ext-intl": "*",
         "ext-mbstring": "*",
         "laminas/laminas-escaper": "^2.18",
-        "laminas/laminas-i18n": "^3.0.x-dev",
+        "laminas/laminas-i18n": "2.32.1",
         "laminas/laminas-servicemanager": "^4.5.0",
         "laminas/laminas-translator": "^1.2",
         "laminas/laminas-view": "^3.0.1",
