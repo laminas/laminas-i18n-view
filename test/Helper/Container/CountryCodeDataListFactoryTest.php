@@ -18,14 +18,12 @@ final class CountryCodeDataListFactoryTest extends TestCase
 
     protected function setUp(): void
     {
-        parent::setUp();
         $this->backupLocale = Locale::getDefault();
     }
 
     protected function tearDown(): void
     {
         Locale::setDefault($this->backupLocale);
-        parent::tearDown();
     }
 
     public function testLocaleWillBeProvidedWhenConfiguredAsAString(): void

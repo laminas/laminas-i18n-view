@@ -15,8 +15,6 @@ final class CountryCodeDataListTest extends TestCase
 
     protected function setUp(): void
     {
-        parent::setUp();
-
         $this->helper = new CountryCodeDataList(
             DefaultCountryCodeList::create(),
             new Escaper(),
